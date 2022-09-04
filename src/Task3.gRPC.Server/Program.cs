@@ -1,4 +1,5 @@
 using Billing;
+using Task3.Application;
 using Task3.Infrastructure;
 
 namespace Task3.gRPC.Server;
@@ -14,6 +15,7 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddGrpc();
+        builder.Services.AddApplication();
         builder.Services.AddInfrastructure();
 
         var app = builder.Build();
