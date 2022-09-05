@@ -1,4 +1,4 @@
-namespace Task3.Application.Common.Interfaces;
+namespace Task3.Application.Common.Interfaces.Repositories;
 
 public interface IGenericRepository<TEntity, TKey>
     where TEntity : class, new()

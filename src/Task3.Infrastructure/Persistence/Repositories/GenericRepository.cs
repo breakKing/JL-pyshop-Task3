@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Task3.Application.Common.Interfaces;
+using Task3.Application.Common.Interfaces.Repositories;
 
 namespace Task3.Infrastructure.Persistence.Repositories;
 

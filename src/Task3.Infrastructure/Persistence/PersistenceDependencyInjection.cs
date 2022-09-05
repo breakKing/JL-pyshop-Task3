@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Task3.Application.Common.Interfaces;
+using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Infrastructure.Persistence.Repositories;
 using Task3.Infrastructure.Persistence.Seeds;
 using Task3.Infrastructure.Persistence.Services;
