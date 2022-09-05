@@ -36,4 +36,13 @@ public abstract class GenericRepository<TEntity, TKey> : IGenericRepository<TEnt
         return await Context.Set<TEntity>()
             .ToListAsync(ct);
     }
+
+    public virtual async Task<List<TProjection>> GetAllAsync<TProjection>(
+        Func<TEntity, TProjection> projection,
+        CancellationToken ct = default)
+    {
+        return await Context.Set<TEntity>()
+            .Select(e => projection(e))
+            .ToListAsync(ct);
+    }
 }

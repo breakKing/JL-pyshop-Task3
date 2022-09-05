@@ -5,5 +5,9 @@ public interface IGenericRepository<TEntity, TKey>
     where TKey : IEquatable<TKey>
 {
     Task<List<TEntity>> GetAllAsync(CancellationToken ct = default);
+
+    Task<List<TProjection>> GetAllAsync<TProjection>(Func<TEntity, TProjection> projection,
+        CancellationToken ct = default);
+
     Task<TKey?> AddAsync(TEntity entity, CancellationToken ct = default);
 }
