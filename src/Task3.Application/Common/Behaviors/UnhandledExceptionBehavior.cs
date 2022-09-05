@@ -1,12 +1,13 @@
 using LanguageExt.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Task3.Application.Common.Interfaces.MediatR;
 
 namespace Task3.Application.Common.Behaviors;
 
 public class UnhandledExceptionBehavior<TRequest, TResponse> :
-    IPipelineBehavior<TRequest, Result<TResponse>>
-        where TRequest : IRequest<Result<TResponse>>
+    IResultPipelineBehavior<TRequest, TResponse>
+        where TRequest : IResultRequest<TResponse>
         where TResponse : class
 {
     private readonly ILogger<TRequest> _logger;
