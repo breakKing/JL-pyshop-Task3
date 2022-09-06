@@ -1,4 +1,4 @@
-using Task3.Application.Common.Interfaces;
+using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Domain.Entities;
 
 namespace Task3.Infrastructure.Persistence.Repositories;

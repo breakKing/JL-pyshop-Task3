@@ -17,6 +17,7 @@ public class Program
         builder.Services.AddGrpc();
         builder.Services.AddApplication();
         builder.Services.AddInfrastructure();
+        builder.Services.AddHelpers();
 
         var app = builder.Build();
 

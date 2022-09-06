@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Task3.Application.Common.Interfaces;
+using Task3.Application.Common.Interfaces.Repositories;
 
 namespace Task3.Infrastructure.Persistence.Repositories;
 
@@ -34,6 +34,15 @@ public abstract class GenericRepository<TEntity, TKey> : IGenericRepository<TEnt
     public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken ct = default)
     {
         return await Context.Set<TEntity>()
+            .ToListAsync(ct);
+    }
+
+    public virtual async Task<List<TProjection>> GetAllAsync<TProjection>(
+        Func<TEntity, TProjection> projection,
+        CancellationToken ct = default)
+    {
+        return await Context.Set<TEntity>()
+            .Select(e => projection(e))
             .ToListAsync(ct);
     }
 }
