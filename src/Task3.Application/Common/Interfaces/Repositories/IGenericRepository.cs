@@ -10,4 +10,6 @@ public interface IGenericRepository<TEntity, TKey>
         CancellationToken ct = default);
 
     Task<TKey?> AddAsync(TEntity entity, CancellationToken ct = default);
+
+    Task<bool> RemoveAsync(TKey id, CancellationToken ct = default);
 }

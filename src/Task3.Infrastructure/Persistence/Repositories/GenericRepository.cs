@@ -21,9 +21,9 @@ public abstract class GenericRepository<TEntity, TKey> : IGenericRepository<TEnt
         await Context.Set<TEntity>()
             .AddAsync(entity, ct);
 
-        var saveResult = await Context.SaveChangesAsync(ct);
+        var saveResult = await SaveDataAsync(ct);
 
-        if (saveResult > 0)
+        if (saveResult)
         {
             return GetEntityId(entity);
         }
@@ -44,5 +44,37 @@ public abstract class GenericRepository<TEntity, TKey> : IGenericRepository<TEnt
         return await Context.Set<TEntity>()
             .Select(e => projection(e))
             .ToListAsync(ct);
+    }
+
+    public virtual async Task<bool> RemoveAsync(TKey id, CancellationToken ct = default)
+    {
+        var entity = await Context.Set<TEntity>()
+            .FirstOrDefaultAsync(e => GetEntityId(e).Equals(id), ct);
+
+        if (entity is null)
+        {
+            return true;
+        }
+
+        Context.Remove(entity);
+        var saveResult = await SaveDataAsync(ct);
+
+        return saveResult;
+    }
+
+    protected async Task<bool> SaveDataAsync(CancellationToken ct = default)
+    {
+        int saveResult;
+
+        try
+        {
+            saveResult = await Context.SaveChangesAsync(ct);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        return saveResult > 0;
     }
 }
