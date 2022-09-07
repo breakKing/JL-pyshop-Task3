@@ -12,4 +12,16 @@ public class ResultHelper : IResultHelper
 
         return data;
     }
+
+    public bool IsResultSucceeded<T>(Result<T> result)
+    {
+        return result.IsSuccess;
+    }
+
+    public Exception GetExceptionFromResult<T>(Result<T> result)
+    {
+        var exception = result.Match(_ => new(), ex => ex);
+
+        return exception;
+    }
 }
