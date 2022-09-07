@@ -24,7 +24,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IDateTimeService, DateTimeService>();
 
-        services.AddSingleton<IEmissionService, EmissionService>();
+        services.AddTransient<IEmissionService, EmissionService>();
 
         return services;
     }
