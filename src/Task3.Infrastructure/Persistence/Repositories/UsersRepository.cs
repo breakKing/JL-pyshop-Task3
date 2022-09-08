@@ -27,6 +27,7 @@ public class UsersRepository : GenericRepository<User, long>, IUsersRepository
     {
         return await Context.Users
             .Include(u => u.Coins)
+            .AsSplitQuery()
             .ToListAsync(ct);
     }
 }
