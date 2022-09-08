@@ -51,7 +51,7 @@ public class ValidationBehavior<TRequest, TResponse> :
         var context = new ValidationContext<TRequest>(request);
 
         var validationResults = await Task.WhenAll(
-            _validators.Select(v =>
+            validators.Select(v =>
                 v.ValidateAsync(context, ct)));
 
         return validationResults;
