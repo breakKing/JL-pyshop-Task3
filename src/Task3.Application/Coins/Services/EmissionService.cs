@@ -46,21 +46,34 @@ public class EmissionService : IEmissionService
         var amounts = new List<long>(users.Select(u => 1L));
         amount -= users.LongCount();
 
+        var initialAmount = amount;
         for (var i = 0; i < amounts.LongCount(); i++)
         {
-            // Высчитываем нужное кол-во монет согласно рейтингу, при этом не превышая
-            // кол-во монет, которые осталось распределить
-            var givenAmount = Math.Min(
-                (long)Math.Floor(amount * ((users[i].Rating + 0.0) / totalRating)),
-                amount);
-
-            amounts[i] += givenAmount;
-            amount -= givenAmount;
-
             if (amount == 0L)
             {
                 break;
             }
+
+            // Высчитываем нужное кол-во монет согласно рейтингу, при этом не превышая
+            // кол-во монет, которые осталось распределить
+            var givenAmount = Math.Min(
+                (long)Math.Floor(initialAmount * ((users[i].Rating + 0.0) / totalRating)),
+                amount);
+
+            amounts[i] += givenAmount;
+            amount -= givenAmount;
+        }
+
+        // Дораздаём оставшиеся монеты согласно рейтингу
+        for (var i = 0; i < amounts.LongCount(); i++)
+        {
+            if (amount == 0L)
+            {
+                break;
+            }
+
+            amounts[i]++;
+            amount--;
         }
 
         return amounts;
@@ -82,7 +95,7 @@ public class EmissionService : IEmissionService
         {
             var coin = new Coin
             {
-                UserId = user.UserId
+                UserId = user.Id
             };
 
             await _coinsRepository.AddAsync(coin, ct);

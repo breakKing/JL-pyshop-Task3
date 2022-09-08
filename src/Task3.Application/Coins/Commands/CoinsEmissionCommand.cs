@@ -6,4 +6,9 @@ namespace Task3.Application.Coins.Commands;
 public class CoinsEmissionCommand : IResultRequest<CoinsEmissionResponse>
 {
     public long Amount { get; set; }
+
+    public CoinsEmissionCommand(long amount)
+    {
+        Amount = amount;
+    }
 }

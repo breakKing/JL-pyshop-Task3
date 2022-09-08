@@ -22,4 +22,11 @@ public class UsersRepository : GenericRepository<User, long>, IUsersRepository
             .Select(u => projection(u))
             .ToListAsync(ct);
     }
+
+    public async Task<List<User>> GetAllWithCoinsAsync(CancellationToken ct = default)
+    {
+        return await Context.Users
+            .Include(u => u.Coins)
+            .ToListAsync(ct);
+    }
 }

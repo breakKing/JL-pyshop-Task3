@@ -21,7 +21,7 @@ public class CoinsEmissionCommandHandler : IResultRequestHandler<CoinsEmissionCo
 
         var response = emissionResult.Match(e =>
         {
-            return new Result<CoinsEmissionResponse>();
+            return new Result<CoinsEmissionResponse>(new CoinsEmissionResponse());
         },
         ex =>
         {

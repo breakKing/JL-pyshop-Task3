@@ -22,7 +22,8 @@ public class ListUsersQueryHandler : IResultRequestHandler<ListUsersQuery, ListU
     public async Task<Result<ListUsersResponse>> Handle(ListUsersQuery request,
         CancellationToken ct)
     {
-        var userDtos = await _repository.GetAllAsync(u => _mapper.Map<UserDto>(u), ct);
+        var users = await _repository.GetAllWithCoinsAsync(ct);
+        var userDtos = users.ConvertAll(u => _mapper.Map<UserDto>(u));
 
         return new ListUsersResponse
         {
