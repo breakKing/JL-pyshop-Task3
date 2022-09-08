@@ -4,7 +4,7 @@ namespace Task3.Domain.Exceptions;
 
 public class CoinsEmissionException : Exception
 {
-    private const string INSUFFICIENT_AMOUNT_MESSAGE = "{1} coins is not enough for {2} users";
+    private const string INSUFFICIENT_AMOUNT_MESSAGE = "{0} coins is not enough for {1} users";
     public CoinsEmissionException() : base()
     {
     }
