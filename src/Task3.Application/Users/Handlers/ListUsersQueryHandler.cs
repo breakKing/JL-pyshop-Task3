@@ -1,6 +1,6 @@
-using LanguageExt.Common;
+using ErrorOr;
 using MapsterMapper;
-using Task3.Application.Common.Interfaces.MediatR;
+using MediatR;
 using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Application.Users.Dtos;
 using Task3.Application.Users.Queries;
@@ -8,7 +8,7 @@ using Task3.Application.Users.Responses;
 
 namespace Task3.Application.Users.Handlers;
 
-public class ListUsersQueryHandler : IResultRequestHandler<ListUsersQuery, ListUsersResponse>
+public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, ErrorOr<ListUsersResponse>>
 {
     private readonly IMapper _mapper;
     private readonly IUsersRepository _repository;
@@ -19,7 +19,7 @@ public class ListUsersQueryHandler : IResultRequestHandler<ListUsersQuery, ListU
         _repository = repository;
     }
 
-    public async Task<Result<ListUsersResponse>> Handle(ListUsersQuery request,
+    public async Task<ErrorOr<ListUsersResponse>> Handle(ListUsersQuery request,
         CancellationToken ct)
     {
         var users = await _repository.GetAllWithCoinsAsync(ct);

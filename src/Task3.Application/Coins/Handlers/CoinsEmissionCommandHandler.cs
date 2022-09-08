@@ -1,12 +1,12 @@
-using LanguageExt.Common;
+using ErrorOr;
+using MediatR;
 using Task3.Application.Coins.Commands;
 using Task3.Application.Coins.Responses;
-using Task3.Application.Common.Interfaces.MediatR;
 using Task3.Application.Common.Interfaces.Services;
 
 namespace Task3.Application.Coins.Handlers;
 
-public class CoinsEmissionCommandHandler : IResultRequestHandler<CoinsEmissionCommand, CoinsEmissionResponse>
+public class CoinsEmissionCommandHandler : IRequestHandler<CoinsEmissionCommand, ErrorOr<CoinsEmissionResponse>>
 {
     private readonly IEmissionService _emissionService;
 
@@ -15,19 +15,15 @@ public class CoinsEmissionCommandHandler : IResultRequestHandler<CoinsEmissionCo
         _emissionService = emissionService;
     }
 
-    public async Task<Result<CoinsEmissionResponse>> Handle(CoinsEmissionCommand request, CancellationToken ct)
+    public async Task<ErrorOr<CoinsEmissionResponse>> Handle(CoinsEmissionCommand request, CancellationToken ct)
     {
         var emissionResult = await _emissionService.MakeEmissionAsync(request.Amount, ct);
 
-        var response = emissionResult.Match(e =>
+        if (emissionResult.IsError)
         {
-            return new Result<CoinsEmissionResponse>(new CoinsEmissionResponse());
-        },
-        ex =>
-        {
-            return new Result<CoinsEmissionResponse>(ex);
-        });
+            return emissionResult.Errors;
+        }
 
-        return response;
+        return new CoinsEmissionResponse();
     }
 }

@@ -1,15 +1,16 @@
-using LanguageExt.Common;
+using ErrorOr;
 using MapsterMapper;
 using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Application.Common.Interfaces.Services;
 using Task3.Application.Users.Dtos;
 using Task3.Domain.Entities;
-using Task3.Domain.Exceptions;
 
 namespace Task3.Application.Coins.Services;
 
 public class EmissionService : IEmissionService
 {
+    private const string INSUFFICIENT_AMOUNT_MESSAGE = "{0} coins is not enough for {1} users";
+
     private readonly ICoinsRepository _coinsRepository;
     private readonly IUsersRepository _usersRepository;
     private readonly IMapper _mapper;
@@ -21,15 +22,15 @@ public class EmissionService : IEmissionService
         _mapper = mapper;
     }
 
-    public async Task<Result<bool>> MakeEmissionAsync(long amount, CancellationToken ct = default)
+    public async Task<ErrorOr<bool>> MakeEmissionAsync(long amount, CancellationToken ct = default)
     {
         var users = await _usersRepository.GetAllWithSortedRatingAsync(u => _mapper.Map<UserRatingDto>(u), ct);
         var usersCount = users.LongCount();
 
         if (usersCount > amount)
         {
-            var emissionException = new CoinsEmissionException(amount, usersCount);
-            return new Result<bool>(emissionException);
+            var message = string.Format(INSUFFICIENT_AMOUNT_MESSAGE, amount, usersCount);
+            return Error.Failure($"{typeof(EmissionService)}.Failure", message);
         }
 
         var amounts = DistributeCoinAmounts(users, amount);

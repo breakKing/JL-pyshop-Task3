@@ -1,11 +1,11 @@
+using ErrorOr;
+using FluentValidation;
 using Grpc.Core;
-using LanguageExt.Common;
 using MediatR;
 using Task3.Application.Coins.Commands;
 using Task3.Application.Coins.Responses;
 using Task3.Application.Users.Dtos;
 using Task3.Application.Users.Queries;
-using Task3.Domain.Exceptions;
 using Task3.gRPC.Server.Helpers;
 
 namespace Billing;
@@ -13,12 +13,12 @@ namespace Billing;
 public class BillingService : Billing.BillingBase
 {
     private readonly ISender _mediator;
-    private readonly IResultHelper _resultHelper;
+    private readonly IErrorOrHelper _errorOrHelper;
 
-    public BillingService(ISender mediator, IResultHelper resultHelper)
+    public BillingService(ISender mediator, IErrorOrHelper errorOrHelper)
     {
         _mediator = mediator;
-        _resultHelper = resultHelper;
+        _errorOrHelper = errorOrHelper;
     }
 
     public override async Task ListUsers(None request,
@@ -28,7 +28,7 @@ public class BillingService : Billing.BillingBase
         var query = new ListUsersQuery();
         var response = await _mediator.Send(query, context.CancellationToken);
 
-        var users = _resultHelper.GetDataFromResult(response, r => r.Users);
+        var users = _errorOrHelper.GetDataFromErrorOr(response, r => r.Users);
         await WriteListUsersAsync(users, responseStream, context.CancellationToken);
     }
 
@@ -39,7 +39,7 @@ public class BillingService : Billing.BillingBase
         var command = new CoinsEmissionCommand(request.Amount);
         var response = await _mediator.Send(command, context.CancellationToken);
 
-        if (!_resultHelper.IsResultSucceeded(response))
+        if (!_errorOrHelper.IsErrorOrStateSucceeded(response))
         {
             return CreateFailedResponseForEmission(response);
         }
@@ -90,22 +90,18 @@ public class BillingService : Billing.BillingBase
         return true;
     }
 
-    private Response CreateFailedResponseForEmission(Result<CoinsEmissionResponse> result)
+    private Response CreateFailedResponseForEmission(ErrorOr<CoinsEmissionResponse> result)
     {
         var statusResponse = new Response
         {
             Status = Response.Types.Status.Failed
         };
 
-        var ex = _resultHelper.GetExceptionFromResult(result);
-        if (ex is CoinsEmissionException coinsEx)
-        {
-            statusResponse.Comment = coinsEx.Message;
-        }
-        else
-        {
-            statusResponse.Comment = "Some error occurred during execution of emission";
-        }
+        var errors = _errorOrHelper.GetErrorsFromErrorOr(result);
+        var messages = errors.ConvertAll(e => e.Description);
+
+        statusResponse.Comment = string.Join(';', messages);
+
         return statusResponse;
     }
 }
