@@ -8,6 +8,7 @@ using Task3.Application.Coins.Services;
 using Task3.Application.Coins.Validators;
 using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Application.Common.Interfaces.Services;
+using Task3.Application.Tests.Unit.Common.Data;
 using Task3.Application.Users.Dtos;
 using Task3.Domain.Entities;
 
@@ -51,22 +52,10 @@ public class CoinsEmissionCommandTests
         long coinsAmount)
     {
         // Assign
-        var users = new List<UserRatingDto>();
-        for (var i = 0; i < usersCount; i++)
-        {
-            users.Add(new UserRatingDto
-            {
-                Id = i + 1,
-                Rating = (i + 1) * 100
-            });
-        }
+        var users = UsersDataGenerator.CreateUsersWithRandomRating(usersCount, _random);
 
-        var usersRepository = Substitute.For<IUsersRepository>();
-        usersRepository.GetAllWithSortedRatingAsync<UserRatingDto>(u => new UserRatingDto())
-            .ReturnsForAnyArgs(users);
-
+        var usersRepository = CreateMockedUsersRepository(users);
         var coinsRepository = Substitute.For<ICoinsRepository>();
-
         var mapper = Substitute.For<IMapper>();
 
         IEmissionService emissionService = new EmissionService(
@@ -100,39 +89,12 @@ public class CoinsEmissionCommandTests
     )
     {
         // Assign
-        var users = new List<UserRatingDto>();
-        for (var i = 0; i < usersCount; i++)
-        {
-            users.Add(new UserRatingDto
-            {
-                Id = i + 1,
-                Rating = _random.Next(1, 10000)
-            });
-        }
-
+        var users = UsersDataGenerator.CreateUsersWithRandomRating(usersCount, _random);
         var coins = new List<Coin>();
         var moves = new List<Move>();
 
-        var usersRepository = Substitute.For<IUsersRepository>();
-        usersRepository.GetAllWithSortedRatingAsync<UserRatingDto>(u => new UserRatingDto())
-            .ReturnsForAnyArgs(users);
-
-        var coinsRepository = Substitute.For<ICoinsRepository>();
-        coinsRepository.AddAsync(new Coin())
-            .ReturnsForAnyArgs(coins.LongCount() + 1)
-            .AndDoes(c =>
-            {
-                var coin = c.Arg<Coin>();
-                coins.Add(coin);
-                moves.Add(new Move
-                {
-                    CoinId = coins.LongCount(),
-                    UnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                    SrcUserId = null,
-                    DstUserId = coin.UserId
-                });
-            });
-
+        var usersRepository = CreateMockedUsersRepository(users);
+        var coinsRepository = CreateMockedCoinsRepositoryWithAddMethod(coins, moves);
         var mapper = Substitute.For<IMapper>();
 
         IEmissionService emissionService = new EmissionService(
@@ -151,5 +113,38 @@ public class CoinsEmissionCommandTests
 
         var distributedAmount = coins.LongCount();
         distributedAmount.Should().Be(coinsAmount);
+    }
+
+    private static IUsersRepository CreateMockedUsersRepository(List<UserRatingDto> users)
+    {
+        var usersRepository = Substitute.For<IUsersRepository>();
+        usersRepository.GetAllWithSortedRatingAsync(u => new UserRatingDto())
+            .ReturnsForAnyArgs(users);
+
+        return usersRepository;
+    }
+
+    private static ICoinsRepository CreateMockedCoinsRepositoryWithAddMethod(
+        List<Coin> coins,
+        List<Move> moves
+    )
+    {
+        var coinsRepository = Substitute.For<ICoinsRepository>();
+        coinsRepository.AddAsync(new Coin())
+            .ReturnsForAnyArgs(coins.LongCount() + 1)
+            .AndDoes(c =>
+            {
+                var coin = c.Arg<Coin>();
+                coins.Add(coin);
+                moves.Add(new Move
+                {
+                    CoinId = coins.LongCount(),
+                    UnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    SrcUserId = null,
+                    DstUserId = coin.UserId
+                });
+            });
+
+        return coinsRepository;
     }
 }
