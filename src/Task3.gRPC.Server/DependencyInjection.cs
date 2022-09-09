@@ -6,7 +6,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddHelpers(this IServiceCollection services)
     {
-        services.AddSingleton<IResultHelper, ResultHelper>();
+        services.AddSingleton<IErrorOrHelper, ErrorOrHelper>();
 
         return services;
     }

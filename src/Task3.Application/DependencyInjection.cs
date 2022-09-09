@@ -4,7 +4,10 @@ using Mapster;
 using MapsterMapper;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Task3.Application.Coins.Services;
 using Task3.Application.Common.Behaviors;
+using Task3.Application.Common.Interfaces.Services;
+using Task3.Application.Common.Services;
 
 namespace Task3.Application;
 
@@ -18,6 +21,10 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         services.AddMappers();
+
+        services.AddSingleton<IDateTimeService, DateTimeService>();
+
+        services.AddTransient<IEmissionService, EmissionService>();
 
         return services;
     }

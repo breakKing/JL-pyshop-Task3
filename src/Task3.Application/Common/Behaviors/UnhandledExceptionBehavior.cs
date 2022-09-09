@@ -1,14 +1,13 @@
-using LanguageExt.Common;
+using ErrorOr;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Task3.Application.Common.Interfaces.MediatR;
 
 namespace Task3.Application.Common.Behaviors;
 
 public class UnhandledExceptionBehavior<TRequest, TResponse> :
-    IResultPipelineBehavior<TRequest, TResponse>
-        where TRequest : IResultRequest<TResponse>
-        where TResponse : class
+    IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IRequest<TResponse>
+        where TResponse : IErrorOr
 {
     private readonly ILogger<TRequest> _logger;
 
@@ -17,9 +16,9 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> :
         _logger = logger;
     }
 
-    public async Task<Result<TResponse>> Handle(TRequest request,
+    public async Task<TResponse> Handle(TRequest request,
         CancellationToken ct,
-        RequestHandlerDelegate<Result<TResponse>> next)
+        RequestHandlerDelegate<TResponse> next)
     {
         try
         {
@@ -31,7 +30,8 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> :
 
             _logger.LogError(ex, "Unhandled Exception for Request {Name} {@Request}", requestName, request);
 
-            return new Result<TResponse>(ex);
+            return (dynamic)Error.Unexpected();
+            //return new Result<TResponse>(ex);
         }
     }
 }
