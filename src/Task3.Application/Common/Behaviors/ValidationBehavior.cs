@@ -1,15 +1,14 @@
+using ErrorOr;
 using FluentValidation;
 using FluentValidation.Results;
-using LanguageExt.Common;
 using MediatR;
-using Task3.Application.Common.Interfaces.MediatR;
 
 namespace Task3.Application.Common.Behaviors;
 
 public class ValidationBehavior<TRequest, TResponse> :
-    IResultPipelineBehavior<TRequest, TResponse>
-        where TRequest : IResultRequest<TResponse>
-        where TResponse : class
+    IPipelineBehavior<TRequest, TResponse>
+        where TRequest : IRequest<TResponse>
+        where TResponse : IErrorOr
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 
@@ -18,9 +17,9 @@ public class ValidationBehavior<TRequest, TResponse> :
         _validators = validators;
     }
 
-    public async Task<Result<TResponse>> Handle(TRequest request,
+    public async Task<TResponse> Handle(TRequest request,
         CancellationToken ct,
-        RequestHandlerDelegate<Result<TResponse>> next)
+        RequestHandlerDelegate<TResponse> next)
     {
         if (!_validators.Any())
         {
@@ -32,12 +31,16 @@ public class ValidationBehavior<TRequest, TResponse> :
 
         var failures = GetValidationFailures(validationResults);
 
-        if (failures.Any())
+        if (failures.Length > 0)
         {
-            var ex = new ValidationException(failures);
+            var errors = failures.Select(f => Error.Validation(f.PropertyName, f.ErrorMessage))
+                .ToList();
+
+            return (dynamic)errors;
+            /*var ex = new ValidationException(failures);
             var response = new Result<TResponse>(ex);
 
-            return response;
+            return response;*/
         }
 
         return await next();
@@ -51,7 +54,7 @@ public class ValidationBehavior<TRequest, TResponse> :
         var context = new ValidationContext<TRequest>(request);
 
         var validationResults = await Task.WhenAll(
-            _validators.Select(v =>
+            validators.Select(v =>
                 v.ValidateAsync(context, ct)));
 
         return validationResults;

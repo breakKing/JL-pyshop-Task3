@@ -10,7 +10,7 @@ public class CoinConfiguration : IEntityTypeConfiguration<Coin>
     {
         // Один ко многим к User
         builder.HasOne<User>()
-            .WithMany()
+            .WithMany(u => u.Coins)
             .HasForeignKey(c => c.UserId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);

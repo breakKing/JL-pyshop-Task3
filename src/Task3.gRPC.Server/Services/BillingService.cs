@@ -1,8 +1,11 @@
+using ErrorOr;
+using FluentValidation;
 using Grpc.Core;
 using MediatR;
+using Task3.Application.Coins.Commands;
+using Task3.Application.Coins.Responses;
 using Task3.Application.Users.Dtos;
 using Task3.Application.Users.Queries;
-using Task3.Domain.Entities;
 using Task3.gRPC.Server.Helpers;
 
 namespace Billing;
@@ -10,12 +13,12 @@ namespace Billing;
 public class BillingService : Billing.BillingBase
 {
     private readonly ISender _mediator;
-    private readonly IResultHelper _resultHelper;
+    private readonly IErrorOrHelper _errorOrHelper;
 
-    public BillingService(ISender mediator, IResultHelper resultHelper)
+    public BillingService(ISender mediator, IErrorOrHelper errorOrHelper)
     {
         _mediator = mediator;
-        _resultHelper = resultHelper;
+        _errorOrHelper = errorOrHelper;
     }
 
     public override async Task ListUsers(None request,
@@ -25,8 +28,26 @@ public class BillingService : Billing.BillingBase
         var query = new ListUsersQuery();
         var response = await _mediator.Send(query, context.CancellationToken);
 
-        var users = _resultHelper.GetDataFromResult(response, r => r.Users);
+        var users = _errorOrHelper.GetDataFromErrorOr(response, r => r.Users);
         await WriteListUsersAsync(users, responseStream, context.CancellationToken);
+    }
+
+    public override async Task<Response> CoinsEmission(
+        EmissionAmount request,
+        ServerCallContext context)
+    {
+        var command = new CoinsEmissionCommand(request.Amount);
+        var response = await _mediator.Send(command, context.CancellationToken);
+
+        if (!_errorOrHelper.IsErrorOrStateSucceeded(response))
+        {
+            return CreateFailedResponseForEmission(response);
+        }
+
+        return new Response
+        {
+            Status = Response.Types.Status.Ok
+        };
     }
 
     private async Task WriteListUsersAsync(List<UserDto> users,
@@ -67,5 +88,20 @@ public class BillingService : Billing.BillingBase
 
         await responseStream.WriteAsync(profile);
         return true;
+    }
+
+    private Response CreateFailedResponseForEmission(ErrorOr<CoinsEmissionResponse> result)
+    {
+        var statusResponse = new Response
+        {
+            Status = Response.Types.Status.Failed
+        };
+
+        var errors = _errorOrHelper.GetErrorsFromErrorOr(result);
+        var messages = errors.ConvertAll(e => e.Description);
+
+        statusResponse.Comment = string.Join(';', messages);
+
+        return statusResponse;
     }
 }
