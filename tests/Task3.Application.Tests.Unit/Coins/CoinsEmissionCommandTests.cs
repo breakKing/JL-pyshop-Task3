@@ -115,6 +115,42 @@ public class CoinsEmissionCommandTests
         distributedAmount.Should().Be(coinsAmount);
     }
 
+    [Theory]
+    [InlineData(10, 100)]
+    [InlineData(4, 6)]
+    [InlineData(2, 3)]
+    [InlineData(1, 1)]
+    public async Task EmissionService_ShouldGiveEveryUserAtLeastOneCoin_WhenCoinsAmountIsGreaterOrEqualToUsersCount(
+        long usersCount,
+        long coinsAmount
+    )
+    {
+        // Assign
+        var users = UsersDataGenerator.CreateUsersWithRandomRating(usersCount, _random);
+        var coins = new List<Coin>();
+        var moves = new List<Move>();
+
+        var usersRepository = CreateMockedUsersRepository(users);
+        var coinsRepository = CreateMockedCoinsRepositoryWithAddMethod(coins, moves);
+        var mapper = Substitute.For<IMapper>();
+
+        IEmissionService emissionService = new EmissionService(
+            coinsRepository,
+            usersRepository,
+            mapper);
+
+        // Act
+        var result = await emissionService.MakeEmissionAsync(coinsAmount);
+
+        // Assert
+        usersCount.Should().BeLessThanOrEqualTo(coinsAmount);
+
+        result.Should().BeOfType<ErrorOr<bool>>()
+            .Which.IsError.Should().BeFalse();
+
+        users.Select(u => u.Id).Should().BeSubsetOf(coins.Select(c => c.UserId));
+    }
+
     private static IUsersRepository CreateMockedUsersRepository(List<UserRatingDto> users)
     {
         var usersRepository = Substitute.For<IUsersRepository>();
