@@ -77,4 +77,26 @@ public abstract class GenericRepository<TEntity, TKey> : IGenericRepository<TEnt
 
         return saveResult > 0;
     }
+
+    public async Task<TProjection?> GetOneAsync<TProjection>(
+        Func<TEntity, TProjection> projection,
+        Func<TEntity, bool> filter,
+        CancellationToken ct = default)
+    {
+        return await Context.Set<TEntity>()
+            .Where(e => filter(e))
+            .Select(e => projection(e))
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<List<TProjection>> GetManyAsync<TProjection>(
+        Func<TEntity, TProjection> projection,
+        Func<TEntity, bool> filter,
+        CancellationToken ct = default)
+    {
+        return await Context.Set<TEntity>()
+            .Where(e => filter(e))
+            .Select(e => projection(e))
+            .ToListAsync(ct);
+    }
 }

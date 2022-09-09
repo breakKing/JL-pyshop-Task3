@@ -30,4 +30,13 @@ public class UsersRepository : GenericRepository<User, long>, IUsersRepository
             .AsSplitQuery()
             .ToListAsync(ct);
     }
+
+    public async Task<User?> GetOneWithCoinsAsync(Func<User, bool> filter,
+        CancellationToken ct = default)
+    {
+        return await Context.Users
+            .Include(u => u.Coins)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(u => filter(u), ct);
+    }
 }
