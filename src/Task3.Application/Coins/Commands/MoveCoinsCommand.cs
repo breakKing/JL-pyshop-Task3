@@ -6,14 +6,14 @@ namespace Task3.Application.Coins.Commands;
 
 public class MoveCoinsCommand : IRequest<ErrorOr<MoveCoinsResponse>>
 {
-    public long SrcUserId { get; set; }
-    public long DstUserId { get; set; }
+    public string SrcUserName { get; set; } = string.Empty;
+    public string DstUserName { get; set; } = string.Empty;
     public long Amount { get; set; }
 
-    public MoveCoinsCommand(long srcUserId, long dstUserId, long amount)
+    public MoveCoinsCommand(string srcUserName, string dstUserName, long amount)
     {
-        SrcUserId = srcUserId;
-        DstUserId = dstUserId;
+        SrcUserName = srcUserName;
+        DstUserName = dstUserName;
         Amount = amount;
     }
 }

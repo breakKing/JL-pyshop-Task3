@@ -20,8 +20,8 @@ public class MoveCoinsCommandHandler : IRequestHandler<MoveCoinsCommand, ErrorOr
         CancellationToken ct)
     {
         var moveResult = await _coinsTransferService.MoveCoinsAsync(
-            request.SrcUserId,
-            request.DstUserId,
+            request.SrcUserName,
+            request.DstUserName,
             request.Amount,
             ct);
 

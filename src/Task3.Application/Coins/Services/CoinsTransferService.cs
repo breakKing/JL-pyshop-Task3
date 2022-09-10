@@ -28,12 +28,12 @@ public class CoinsTransferService : ICoinsTransferService
     }
 
     public async Task<ErrorOr<bool>> MoveCoinsAsync(
-        long srcUserId,
-        long dstUserId,
+        string srcUserName,
+        string dstUserName,
         long amount,
         CancellationToken ct = default)
     {
-        var potentialSrcUser = await GetUserIfExistsAsync(srcUserId,
+        var potentialSrcUser = await GetUserIfExistsAsync(srcUserName,
             SRC_USER_DOESNT_EXIST_MESSAGE, ct);
 
         if (potentialSrcUser.IsError)
@@ -43,7 +43,7 @@ public class CoinsTransferService : ICoinsTransferService
 
         var srcUser = potentialSrcUser.Value;
 
-        var potentialDstUser = await GetUserIfExistsAsync(srcUserId,
+        var potentialDstUser = await GetUserIfExistsAsync(dstUserName,
             DST_USER_DOESNT_EXIST_MESSAGE, ct);
 
         if (potentialDstUser.IsError)
@@ -60,8 +60,8 @@ public class CoinsTransferService : ICoinsTransferService
         }
 
         var result = await _coinsRepository.AddMovesAsync(
-            srcUserId,
-            dstUserId,
+            srcUser.Id,
+            dstUser.Id,
             amount,
             ct);
 
@@ -74,12 +74,12 @@ public class CoinsTransferService : ICoinsTransferService
         return true;
     }
 
-    private async Task<ErrorOr<User>> GetUserIfExistsAsync(long userId,
+    private async Task<ErrorOr<User>> GetUserIfExistsAsync(string userName,
         string messageForFail,
         CancellationToken ct = default)
     {
         var user = await _usersRepository.GetOneWithCoinsAsync(
-            u => u.Id == userId,
+            u => u.Name == userName,
             ct);
 
         if (user is null)
