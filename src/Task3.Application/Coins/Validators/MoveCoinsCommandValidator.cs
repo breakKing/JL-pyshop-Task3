@@ -10,7 +10,7 @@ public class MoveCoinsCommandValidator : AbstractValidator<MoveCoinsCommand>
     private const string EMPTY_DST_USER_MESSAGE =
         "Destination user id can't be a non-positive value";
     private const string NEGATIVE_AMOUNT_MESSAGE =
-        "It's impossible to make an emission with non-positive amount of coins";
+        "It's impossible to transfer non-positive amount of coins";
 
     public MoveCoinsCommandValidator()
     {
