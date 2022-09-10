@@ -79,7 +79,7 @@ public class CoinsTransferService : ICoinsTransferService
         CancellationToken ct = default)
     {
         var user = await _usersRepository.GetOneWithCoinsAsync(
-            u => u.Name == userName,
+            userName,
             ct);
 
         if (user is null)

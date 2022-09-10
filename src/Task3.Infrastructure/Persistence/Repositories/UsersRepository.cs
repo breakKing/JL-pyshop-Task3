@@ -31,12 +31,12 @@ public class UsersRepository : GenericRepository<User, long>, IUsersRepository
             .ToListAsync(ct);
     }
 
-    public async Task<User?> GetOneWithCoinsAsync(Func<User, bool> filter,
+    public async Task<User?> GetOneWithCoinsAsync(string userName,
         CancellationToken ct = default)
     {
         return await Context.Users
             .Include(u => u.Coins)
             .AsSplitQuery()
-            .FirstOrDefaultAsync(u => filter(u), ct);
+            .FirstOrDefaultAsync(u => u.Name == userName, ct);
     }
 }
