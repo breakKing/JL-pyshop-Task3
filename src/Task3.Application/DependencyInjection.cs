@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeService, DateTimeService>();
 
         services.AddTransient<IEmissionService, EmissionService>();
+        services.AddTransient<ICoinsTransferService, CoinsTransferService>();
 
         return services;
     }

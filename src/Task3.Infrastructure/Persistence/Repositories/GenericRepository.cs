@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Task3.Application.Common.Interfaces.Repositories;
 
@@ -76,5 +77,16 @@ public abstract class GenericRepository<TEntity, TKey> : IGenericRepository<TEnt
         }
 
         return saveResult > 0;
+    }
+
+    public async Task<TProjection?> GetOneAsync<TProjection>(
+        Func<TEntity, TProjection> projection,
+        TKey id,
+        CancellationToken ct = default)
+    {
+        return await Context.Set<TEntity>()
+            .Where(e => GetEntityId(e).Equals(id))
+            .Select(e => projection(e))
+            .FirstOrDefaultAsync(ct);
     }
 }
