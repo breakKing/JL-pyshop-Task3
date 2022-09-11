@@ -89,7 +89,7 @@ public class MoveCoinsCommandTests
             Name = existentUserName
         };
 
-        var usersRepository = CreateMockedUserRepositoryWithDefinedUsers(existentUser);
+        var usersRepository = CreateMockedUsersRepositoryWithDefinedUsers(existentUser);
         var coinsRepository = Substitute.For<ICoinsRepository>();
         var mapper = Substitute.For<IMapper>();
 
@@ -119,21 +119,10 @@ public class MoveCoinsCommandTests
     public async Task TransferService_ShouldReturnErrorFailure_WhenSrcUserHasInsufficientCoins(long srcUserAmount, long amountToMove)
     {
         // Assign
-        var srcUser = new User
-        {
-            Id = 1,
-            Name = "srcUserName",
-            Coins = CoinsDataGenerator.CreateCoinsForUser(1, srcUserAmount)
-        };
+        var srcUser = UsersDataGenerator.CreateUserWithCoins(1, "srcUserName", srcUserAmount);
+        var dstUser = UsersDataGenerator.CreateUserWithCoins(2, "dstUserName", 0, srcUserAmount + 1);
 
-        var dstUser = new User
-        {
-            Id = 2,
-            Name = "dstUserName",
-            Coins = CoinsDataGenerator.CreateCoinsForUser(2, 0, srcUserAmount + 1)
-        };
-
-        var usersRepository = CreateMockedUserRepositoryWithDefinedUsers(srcUser, dstUser);
+        var usersRepository = CreateMockedUsersRepositoryWithDefinedUsers(srcUser, dstUser);
         var coinsRepository = Substitute.For<ICoinsRepository>();
         var mapper = Substitute.For<IMapper>();
 
@@ -158,7 +147,58 @@ public class MoveCoinsCommandTests
             .Which.Type.Should().Be(ErrorType.Failure);
     }
 
-    private static IUsersRepository CreateMockedUserRepositoryWithDefinedUsers(params User[] users)
+    [Theory]
+    [InlineData(5, 0, 3)]
+    [InlineData(100, 1000, 100)]
+    [InlineData(500, 13, 1)]
+    public async Task TransferService_ShouldMoveCoinsCorrectly_WhenCoinsCanBeMoved(
+        long srcUserAmount,
+        long dstUserAmount,
+        long amountToMove)
+    {
+        // Assign
+        var srcUser = UsersDataGenerator.CreateUserWithCoins(1, "srcUserName", srcUserAmount);
+        var dstUser = UsersDataGenerator.CreateUserWithCoins(2, "dstUserName", dstUserAmount, srcUserAmount + 1);
+
+        var coins = new List<Coin>();
+        coins.AddRange(srcUser.Coins);
+        coins.AddRange(dstUser.Coins);
+
+        var moves = new List<Move>();
+
+        var usersRepository = CreateMockedUsersRepositoryWithDefinedUsers(srcUser, dstUser);
+        var coinsRepository = CreateMockedCoinsRepository(coins, moves, srcUser, dstUser);
+        var mapper = Substitute.For<IMapper>();
+
+        ICoinsTransferService transferService = new CoinsTransferService(
+            usersRepository,
+            coinsRepository,
+            mapper
+        );
+        
+        // Act
+        var result = await transferService.MoveCoinsAsync("srcUserName", "dstUserName", amountToMove);
+        
+        // Assert
+        srcUserAmount.Should().BeGreaterThanOrEqualTo(amountToMove);
+
+        result.Should().BeOfType<ErrorOr<bool>>()
+            .Which.IsError.Should().BeFalse();
+
+        moves.Should().HaveCount((int)amountToMove);
+        
+        coins.Where(c => c.UserId == srcUser.Id)
+            .Should().HaveCount((int)(srcUserAmount - amountToMove));
+
+        coins.Where(c => c.UserId == dstUser.Id)
+            .Should().HaveCount((int)(dstUserAmount + amountToMove));
+
+        srcUser.Amount.Should().Be(srcUserAmount - amountToMove);
+
+        dstUser.Amount.Should().Be(dstUserAmount + amountToMove);
+    }
+
+    private static IUsersRepository CreateMockedUsersRepositoryWithDefinedUsers(params User[] users)
     {
         var repository = Substitute.For<IUsersRepository>();
         repository.GetOneWithCoinsAsync(string.Empty)
@@ -170,6 +210,53 @@ public class MoveCoinsCommandTests
                 .Returns(users[i]);
         }
         
+        return repository;
+    }
+
+    private static ICoinsRepository CreateMockedCoinsRepository(
+        List<Coin> coins,
+        List<Move> moves,
+        User srcUser,
+        User dstUser)
+    {
+        var repository = Substitute.For<ICoinsRepository>();
+        repository.AddMovesAsync(default, default, default)
+            .ReturnsForAnyArgs(true)
+            .AndDoes(c =>
+            {
+                var srcUserId = c.ArgAt<long>(0);
+                var dstUserId = c.ArgAt<long>(1);
+                var amount = c.ArgAt<long>(2);
+
+                long moved = 0;
+                for (var i = 0; i < coins.LongCount(); i++)
+                {
+                    if (moved == amount)
+                    {
+                        break;
+                    }
+
+                    if (coins[i].UserId != srcUserId)
+                    {
+                        continue;
+                    }
+
+                    srcUser.Coins.Remove(coins[i]);
+                    coins[i].UserId = dstUserId;
+                    dstUser.Coins.Add(coins[i]);
+                    
+                    var move = new Move
+                    {
+                        SrcUserId = srcUserId,
+                        DstUserId = dstUserId,
+                        UnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                        CoinId = coins[i].Id
+                    };
+                    moves.Add(move);
+                    moved++;
+                }
+            });
+
         return repository;
     }
 }
