@@ -109,6 +109,8 @@ public class MoveCoinsCommandTests
     private static IUsersRepository CreateMockedUserRepositoryWithDefinedUsers(params string[] userNames)
     {
         var repository = Substitute.For<IUsersRepository>();
+        repository.GetOneWithCoinsAsync(string.Empty)
+            .ReturnsForAnyArgs(null as User);
 
         for (var i = 0; i < userNames.LongLength; i++)
         {
@@ -121,9 +123,6 @@ public class MoveCoinsCommandTests
             repository.GetOneWithCoinsAsync(userNames[i])
                 .Returns(user);
         }
-        
-        repository.GetOneWithCoinsAsync(string.Empty)
-            .Returns(null as User);
         
         return repository;
     }
