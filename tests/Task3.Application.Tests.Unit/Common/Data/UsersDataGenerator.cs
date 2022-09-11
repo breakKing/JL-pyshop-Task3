@@ -1,4 +1,5 @@
 using Task3.Application.Users.Dtos;
+using Task3.Domain.Entities;
 
 namespace Task3.Application.Tests.Unit.Common.Data;
 
@@ -16,5 +17,15 @@ public class UsersDataGenerator
             });
         }
         return users;
+    }
+
+    public static User CreateUserWithCoins(long userId, string userName, long coinsAmount, long startCoinId = 1)
+    {
+        return new User
+        {
+            Id = userId,
+            Name = userName,
+            Coins = CoinsDataGenerator.CreateCoinsForUser(userId, coinsAmount, startCoinId)
+        };
     }
 }

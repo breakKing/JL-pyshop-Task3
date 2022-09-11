@@ -4,6 +4,10 @@ public interface IGenericRepository<TEntity, TKey>
     where TEntity : class, new()
     where TKey : IEquatable<TKey>
 {
+    Task<TProjection?> GetOneAsync<TProjection>(Func<TEntity, TProjection> projection,
+        TKey id,
+        CancellationToken ct = default);
+
     Task<List<TEntity>> GetAllAsync(CancellationToken ct = default);
 
     Task<List<TProjection>> GetAllAsync<TProjection>(Func<TEntity, TProjection> projection,

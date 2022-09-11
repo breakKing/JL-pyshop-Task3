@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Application.Common.Interfaces.Services;
 using Task3.Domain.Entities;
@@ -44,5 +45,48 @@ public class CoinsRepository : GenericRepository<Coin, long>, ICoinsRepository
 
         await RemoveAsync(createdCoinId, ct);
         return default;
+    }
+
+    public async Task<List<TProjection>> GetUserCoinsAsync<TProjection>(
+        Func<Coin, TProjection> projection,
+        long userId,
+        CancellationToken ct = default)
+    {
+        return await Context.Coins
+            .Where(c => c.UserId == userId)
+            .Select(c => projection(c))
+            .ToListAsync(ct);
+    }
+
+    public async Task<bool> AddMovesAsync(
+        long srcUserId,
+        long dstUserId,
+        long amount = 1,
+        CancellationToken ct = default)
+    {
+        var coins = await GetUserCoinsAsync(c => c, srcUserId, ct);
+        if (coins.LongCount() < amount)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < amount; i++)
+        {
+            var move = new Move
+            {
+                CoinId = coins[i].Id,
+                UnixTimestamp = _dateTimeService.UtcNowOffset.ToUnixTimeMilliseconds(),
+                SrcUserId = srcUserId,
+                DstUserId = dstUserId
+            };
+            await Context.Moves.AddAsync(move, ct);
+
+            coins[i].UserId = dstUserId;
+            Context.Coins.Update(coins[i]);
+        }
+
+        var saveResult = await SaveDataAsync(ct);
+
+        return saveResult;
     }
 }

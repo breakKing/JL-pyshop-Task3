@@ -1,5 +1,5 @@
+using Billing;
 using ErrorOr;
-using FluentValidation;
 using Grpc.Core;
 using MediatR;
 using Task3.Application.Coins.Commands;
@@ -8,9 +8,9 @@ using Task3.Application.Users.Dtos;
 using Task3.Application.Users.Queries;
 using Task3.gRPC.Server.Helpers;
 
-namespace Billing;
+namespace Task3.gRPC.Server.Services;
 
-public class BillingService : Billing.BillingBase
+public class BillingService : Billing.Billing.BillingBase
 {
     private readonly ISender _mediator;
     private readonly IErrorOrHelper _errorOrHelper;
@@ -42,6 +42,25 @@ public class BillingService : Billing.BillingBase
         if (!_errorOrHelper.IsErrorOrStateSucceeded(response))
         {
             return CreateFailedResponseForEmission(response);
+        }
+
+        return new Response
+        {
+            Status = Response.Types.Status.Ok
+        };
+    }
+
+    public async override Task<Response> MoveCoins(
+        MoveCoinsTransaction request,
+        ServerCallContext context)
+    {
+        var command = new MoveCoinsCommand(request.SrcUser,
+            request.DstUser, request.Amount);
+        var response = await _mediator.Send(command, context.CancellationToken);
+
+        if (!_errorOrHelper.IsErrorOrStateSucceeded(response))
+        {
+            return CreateFailedResponseForMoving(response);
         }
 
         return new Response
@@ -91,6 +110,21 @@ public class BillingService : Billing.BillingBase
     }
 
     private Response CreateFailedResponseForEmission(ErrorOr<CoinsEmissionResponse> result)
+    {
+        var statusResponse = new Response
+        {
+            Status = Response.Types.Status.Failed
+        };
+
+        var errors = _errorOrHelper.GetErrorsFromErrorOr(result);
+        var messages = errors.ConvertAll(e => e.Description);
+
+        statusResponse.Comment = string.Join(';', messages);
+
+        return statusResponse;
+    }
+
+    private Response CreateFailedResponseForMoving(ErrorOr<MoveCoinsResponse> result)
     {
         var statusResponse = new Response
         {
