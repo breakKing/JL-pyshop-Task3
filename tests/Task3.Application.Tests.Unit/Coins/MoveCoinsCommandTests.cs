@@ -8,6 +8,7 @@ using Task3.Application.Coins.Services;
 using Task3.Application.Coins.Validators;
 using Task3.Application.Common.Interfaces.Repositories;
 using Task3.Application.Common.Interfaces.Services;
+using Task3.Application.Tests.Unit.Common.Data;
 using Task3.Domain.Entities;
 
 namespace Task3.Application.Tests.Unit.Coins;
@@ -82,8 +83,13 @@ public class MoveCoinsCommandTests
     {
         // Assign
         var existentUserName = srcUserDoesntExist ? "dstUserName" : "srcUserName";
+        var existentUser = new User
+        {
+            Id = 1,
+            Name = existentUserName
+        };
 
-        var usersRepository = CreateMockedUserRepositoryWithDefinedUsers(existentUserName);
+        var usersRepository = CreateMockedUserRepositoryWithDefinedUsers(existentUser);
         var coinsRepository = Substitute.For<ICoinsRepository>();
         var mapper = Substitute.For<IMapper>();
 
@@ -106,22 +112,62 @@ public class MoveCoinsCommandTests
             .Which.Type.Should().Be(ErrorType.NotFound);
     }
 
-    private static IUsersRepository CreateMockedUserRepositoryWithDefinedUsers(params string[] userNames)
+    [Theory]
+    [InlineData(10, 23)]
+    [InlineData(5, 100)]
+    [InlineData(0, 1)]
+    public async Task TransferService_ShouldReturnErrorFailure_WhenSrcUserHasInsufficientCoins(long srcUserAmount, long amountToMove)
+    {
+        // Assign
+        var srcUser = new User
+        {
+            Id = 1,
+            Name = "srcUserName",
+            Coins = CoinsDataGenerator.CreateCoinsForUser(1, srcUserAmount)
+        };
+
+        var dstUser = new User
+        {
+            Id = 2,
+            Name = "dstUserName",
+            Coins = CoinsDataGenerator.CreateCoinsForUser(2, 0, srcUserAmount + 1)
+        };
+
+        var usersRepository = CreateMockedUserRepositoryWithDefinedUsers(srcUser, dstUser);
+        var coinsRepository = Substitute.For<ICoinsRepository>();
+        var mapper = Substitute.For<IMapper>();
+
+        ICoinsTransferService transferService = new CoinsTransferService(
+            usersRepository,
+            coinsRepository,
+            mapper
+        );
+        
+        // Act
+        var result = await transferService.MoveCoinsAsync("srcUserName", "dstUserName", amountToMove);
+        
+        // Assert
+        srcUserAmount.Should().BeLessThan(amountToMove);
+
+        result.Should().BeOfType<ErrorOr<bool>>()
+            .Which.IsError.Should().BeTrue();
+        
+        result.Errors.Should().HaveCount(1);
+
+        result.Errors[0].Should().BeOfType<Error>()
+            .Which.Type.Should().Be(ErrorType.Failure);
+    }
+
+    private static IUsersRepository CreateMockedUserRepositoryWithDefinedUsers(params User[] users)
     {
         var repository = Substitute.For<IUsersRepository>();
         repository.GetOneWithCoinsAsync(string.Empty)
             .ReturnsForAnyArgs(null as User);
 
-        for (var i = 0; i < userNames.LongLength; i++)
+        for (var i = 0; i < users.LongLength; i++)
         {
-            var user = new User()
-            {
-                Id = i + 1,
-                Name = userNames[i]
-            };
-
-            repository.GetOneWithCoinsAsync(userNames[i])
-                .Returns(user);
+            repository.GetOneWithCoinsAsync(users[i].Name)
+                .Returns(users[i]);
         }
         
         return repository;
