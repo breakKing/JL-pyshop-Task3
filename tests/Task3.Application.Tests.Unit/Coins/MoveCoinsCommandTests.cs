@@ -81,10 +81,9 @@ public class MoveCoinsCommandTests
     public async Task TransferService_ShouldReturnErrorFailure_WhenOneOfUsersDoesntExist(bool srcUserDoesntExist)
     {
         // Assign
-        var nonExistentUserName = srcUserDoesntExist ? "srcUserName" : "dstUserName";
-        var existentUserName = !srcUserDoesntExist ? "srcUserName" : "dstUserName";
+        var existentUserName = srcUserDoesntExist ? "dstUserName" : "srcUserName";
 
-        var usersRepository = CreateMockedUserRepositoryWithoutDefinedUser(nonExistentUserName, existentUserName);
+        var usersRepository = CreateMockedUserRepositoryWithDefinedUsers(existentUserName);
         var coinsRepository = Substitute.For<ICoinsRepository>();
         var mapper = Substitute.For<IMapper>();
 
@@ -107,20 +106,23 @@ public class MoveCoinsCommandTests
             .Which.Type.Should().Be(ErrorType.NotFound);
     }
 
-    private static IUsersRepository CreateMockedUserRepositoryWithoutDefinedUser(string nonExistentUserName,
-        string existentUserName = "existentUserName")
+    private static IUsersRepository CreateMockedUserRepositoryWithDefinedUsers(params string[] userNames)
     {
-        User existentUser = new()
-        {
-            Id = 1,
-            Name = existentUserName
-        };
-
         var repository = Substitute.For<IUsersRepository>();
 
-        repository.GetOneWithCoinsAsync("")
-            .ReturnsForAnyArgs(existentUser);
-        repository.GetOneWithCoinsAsync(nonExistentUserName)
+        for (var i = 0; i < userNames.LongLength; i++)
+        {
+            var user = new User()
+            {
+                Id = i + 1,
+                Name = userNames[i]
+            };
+
+            repository.GetOneWithCoinsAsync(userNames[i])
+                .Returns(user);
+        }
+        
+        repository.GetOneWithCoinsAsync(string.Empty)
             .Returns(null as User);
         
         return repository;
