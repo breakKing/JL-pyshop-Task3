@@ -124,11 +124,8 @@ public class BillingService : Billing.Billing.BillingBase
         var profile = new UserProfile
         {
             Name = user.Name,
+            Amount = user.Amount
         };
-        if (user.Amount != 0)
-        {
-            profile.Amount = user.Amount;
-        }
 
         await responseStream.WriteAsync(profile);
         return true;
