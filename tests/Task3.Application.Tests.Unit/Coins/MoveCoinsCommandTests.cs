@@ -76,6 +76,23 @@ public class MoveCoinsCommandTests
             .Which.IsValid.Should().BeFalse();
     }
 
+    [Fact]
+    public void Validator_ShouldReturnValidationError_WhenSrcUserNameIsEqualToDstUserName()
+    {
+        // Assign
+        const string userName = "userName";
+
+        var validator = new MoveCoinsCommandValidator();
+        var command = new MoveCoinsCommand(userName, userName, _random.NextInt64(1, 100000000));
+        
+        // Act
+        var result = validator.Validate(command);
+        
+        // Assert
+        result.Should().BeOfType<ValidationResult>()
+            .Which.IsValid.Should().BeFalse();
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
