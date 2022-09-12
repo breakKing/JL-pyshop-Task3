@@ -11,8 +11,8 @@ public class MoveConfiguration : IEntityTypeConfiguration<Move>
         // Составной первичный ключ
         builder.HasKey(m => new { m.UnixTimestamp, m.CoinId });
 
-        // Индекс по UnixTimestamp
-        builder.HasIndex(m => m.UnixTimestamp);
+        // Индекс по CoinId
+        builder.HasIndex(m => m.CoinId);
 
         // Один ко многим к User (SrcUserId)
         builder.HasOne<User>()
@@ -25,6 +25,13 @@ public class MoveConfiguration : IEntityTypeConfiguration<Move>
         builder.HasOne<User>()
             .WithMany()
             .HasForeignKey(m => m.DstUserId)
+            .IsRequired(true)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Один ко многим к Coin
+        builder.HasOne<Coin>()
+            .WithMany(c => c.Moves)
+            .HasForeignKey(m => m.CoinId)
             .IsRequired(true)
             .OnDelete(DeleteBehavior.Restrict);
     }

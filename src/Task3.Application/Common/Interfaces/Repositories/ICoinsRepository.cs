@@ -14,4 +14,9 @@ public interface ICoinsRepository : IGenericRepository<Coin, long>
         long dstUserId,
         long amount = 1,
         CancellationToken ct = default);
+
+    Task<TProjection?> GetCoinWithLongestHistoryOrDefaultAsync<TProjection>(
+        Func<Coin, TProjection> projection,
+        CancellationToken ct = default
+    );
 }

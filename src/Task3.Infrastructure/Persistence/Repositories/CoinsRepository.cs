@@ -89,4 +89,33 @@ public class CoinsRepository : GenericRepository<Coin, long>, ICoinsRepository
 
         return saveResult;
     }
+
+    public async Task<TProjection?> GetCoinWithLongestHistoryOrDefaultAsync<TProjection>(
+        Func<Coin, TProjection> projection,
+        CancellationToken ct = default)
+    {
+        var coins = await Context.Coins
+            .Include(c => c.Moves)
+            .AsSplitQuery()
+            .Select(c => new {
+                c.Id,
+                MovesCount = c.Moves.LongCount()
+            })
+            .ToListAsync(ct);
+        
+        if (coins.LongCount() == 0)
+        {
+            return default;
+        }
+        
+        var coinIdWithLongestHistory = coins.MaxBy(c => c.MovesCount)!.Id;
+        var coin = await Context.Coins
+            .Include(c => c.Moves)
+            .AsSplitQuery()
+            .Where(c => c.Id == coinIdWithLongestHistory)
+            .Select(c => projection(c))
+            .FirstOrDefaultAsync(ct);
+
+        return coin;
+    }
 }
