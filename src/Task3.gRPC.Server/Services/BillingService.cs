@@ -141,7 +141,7 @@ public class BillingService : Billing.Billing.BillingBase
         var errors = _errorOrHelper.GetErrorsFromErrorOr(result);
         var messages = errors.ConvertAll(e => e.Description);
 
-        statusResponse.Comment = string.Join(';', messages);
+        statusResponse.Comment = string.Join("; ", messages);
 
         return statusResponse;
     }
@@ -156,13 +156,13 @@ public class BillingService : Billing.Billing.BillingBase
         var errors = _errorOrHelper.GetErrorsFromErrorOr(result);
         var messages = errors.ConvertAll(e => e.Description);
 
-        statusResponse.Comment = string.Join(';', messages);
+        statusResponse.Comment = string.Join("; ", messages);
 
         return statusResponse;
     }
 
     private string CreateCoinHistoryStringFromMoves(List<MoveWithUserNamesDto> moves)
     {
-        return string.Join(';', moves.Select(m => m.DstUserName));
+        return string.Join("; ", moves.Select(m => m.DstUserName));
     }
 }
