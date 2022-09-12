@@ -110,7 +110,8 @@ public class CoinsRepository : GenericRepository<Coin, long>, ICoinsRepository
         
         var coinIdWithLongestHistory = coins.MaxBy(c => c.MovesCount)!.Id;
         var coin = await Context.Coins
-            .Include(c => c.Moves)
+            .Include(c => c.Moves).ThenInclude(m => m.SrcUser)
+            .Include(c => c.Moves).ThenInclude(m => m.DstUser)
             .AsSplitQuery()
             .Where(c => c.Id == coinIdWithLongestHistory)
             .Select(c => projection(c))

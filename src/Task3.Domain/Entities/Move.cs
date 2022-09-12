@@ -6,4 +6,7 @@ public class Move
     public long UnixTimestamp { get; set; }
     public long? SrcUserId { get; set; }
     public long DstUserId { get; set; }
+
+    public User? SrcUser { get; set; }
+    public User? DstUser { get; set; }
 }
