@@ -85,21 +85,7 @@ public class EmissionService : IEmissionService
     {
         for (var i = 0; i < users.LongCount(); i++)
         {
-            await GiveCoinsToUserAsync(users[i], amounts[i], ct);
-        }
-    }
-
-    private async Task GiveCoinsToUserAsync(UserRatingDto user, long amount,
-        CancellationToken ct = default)
-    {
-        for (var i = 0; i < amount; i++)
-        {
-            var coin = new Coin
-            {
-                UserId = user.Id
-            };
-
-            await _coinsRepository.AddAsync(coin, ct);
+            await _coinsRepository.AddCoinsToUserAsync(users[i].Id, amounts[i], ct);
         }
     }
 }

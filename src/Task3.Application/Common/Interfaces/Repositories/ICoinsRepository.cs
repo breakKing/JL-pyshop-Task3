@@ -9,6 +9,11 @@ public interface ICoinsRepository : IGenericRepository<Coin, long>
         long userId,
         CancellationToken ct = default);
 
+    Task<bool> AddCoinsToUserAsync(
+        long userId,
+        long amount,
+        CancellationToken ct = default);
+
     Task<bool> AddMovesAsync(
         long srcUserId,
         long dstUserId,

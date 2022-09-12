@@ -166,19 +166,28 @@ public class CoinsEmissionCommandTests
     )
     {
         var coinsRepository = Substitute.For<ICoinsRepository>();
-        coinsRepository.AddAsync(new Coin())
-            .ReturnsForAnyArgs(coins.LongCount() + 1)
+        coinsRepository.AddCoinsToUserAsync(default, default)
+            .ReturnsForAnyArgs(true)
             .AndDoes(c =>
             {
-                var coin = c.Arg<Coin>();
-                coins.Add(coin);
-                moves.Add(new Move
+                var userId = c.ArgAt<long>(0);
+                var amount = c.ArgAt<long>(1);
+
+                for (var i = 0; i < amount; i++)
                 {
-                    CoinId = coins.LongCount(),
-                    UnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                    SrcUserId = null,
-                    DstUserId = coin.UserId
-                });
+                    coins.Add(new Coin
+                    {
+                        Id = coins.LongCount() + 1,
+                        UserId = userId
+                    });
+                    moves.Add(new Move
+                    {
+                        CoinId = coins.LongCount(),
+                        UnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                        SrcUserId = null,
+                        DstUserId = userId
+                    });
+                }
             });
 
         return coinsRepository;
