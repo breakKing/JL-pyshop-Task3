@@ -4,10 +4,12 @@ using Mapster;
 using MapsterMapper;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Task3.Application.Coins.Dtos;
 using Task3.Application.Coins.Services;
 using Task3.Application.Common.Behaviors;
 using Task3.Application.Common.Interfaces.Services;
 using Task3.Application.Common.Services;
+using Task3.Domain.Entities;
 
 namespace Task3.Application;
 
@@ -40,11 +42,25 @@ public static class DependencyInjection
 
     private static IServiceCollection AddMappers(this IServiceCollection services)
     {
-        var config = TypeAdapterConfig.GlobalSettings;
+        var config = GetMappersConfiguration();
         services.AddSingleton(config);
 
         services.AddTransient<IMapper, ServiceMapper>();
 
         return services;
+    }
+
+    private static TypeAdapterConfig GetMappersConfiguration()
+    {
+        var config = TypeAdapterConfig.GlobalSettings;
+
+        config.Default.PreserveReference(true);
+        config.ForType<Move, MoveWithUserNamesDto>()
+            .Map(dst => dst.SrcUserName,
+                src => src.SrcUser == null ? string.Empty : src.SrcUser.Name)
+            .Map(dst => dst.DstUserName,
+                src => src.DstUser == null ? string.Empty : src.DstUser.Name);
+        
+        return config;
     }
 }
