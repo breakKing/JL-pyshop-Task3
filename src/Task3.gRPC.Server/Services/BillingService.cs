@@ -3,6 +3,8 @@ using ErrorOr;
 using Grpc.Core;
 using MediatR;
 using Task3.Application.Coins.Commands;
+using Task3.Application.Coins.Dtos;
+using Task3.Application.Coins.Queries;
 using Task3.Application.Coins.Responses;
 using Task3.Application.Users.Dtos;
 using Task3.Application.Users.Queries;
@@ -66,6 +68,29 @@ public class BillingService : Billing.Billing.BillingBase
         return new Response
         {
             Status = Response.Types.Status.Ok
+        };
+    }
+
+    public override async Task<Coin> LongestHistoryCoin(None request, ServerCallContext context)
+    {
+        var query = new CoinWithLongestHistoryQuery();
+        var response = await _mediator.Send(query, context.CancellationToken);
+
+        if (!_errorOrHelper.IsErrorOrStateSucceeded(response))
+        {
+            return new Coin
+            {
+                Id = 0,
+                History = string.Empty
+            };
+        }
+
+        var coin = _errorOrHelper.GetDataFromErrorOr(response, c => c.Coin);
+        
+        return new Coin
+        {
+            Id = coin.Id,
+            History = CreateCoinHistoryStringFromMoves(coin.Moves)
         };
     }
 
@@ -137,5 +162,10 @@ public class BillingService : Billing.Billing.BillingBase
         statusResponse.Comment = string.Join(';', messages);
 
         return statusResponse;
+    }
+
+    private string CreateCoinHistoryStringFromMoves(List<MoveWithUserNamesDto> moves)
+    {
+        return string.Join(';', moves.Select(m => m.DstUserName));
     }
 }
