@@ -17,34 +17,54 @@ public class CoinsRepository : GenericRepository<Coin, long>, ICoinsRepository
         _dateTimeService = dateTimeService;
     }
 
-    public override async Task<long> AddAsync(Coin coin, CancellationToken ct = default)
+    public async Task<bool> AddCoinsToUserAsync(
+        long userId,
+        long amount,
+        CancellationToken ct = default)
     {
-        var createdCoinId = await base.AddAsync(coin, ct);
-
-        if (createdCoinId is default(long))
+        var coins = new List<Coin>();
+        for (var i = 0; i < amount; i++)
         {
-            return default;
+            var coin = new Coin
+            {
+                UserId = userId
+            };
+            
+            coins.Add(coin);
         }
 
-        var move = new Move
+        await Context.Coins.AddRangeAsync(coins, ct);
+        bool saveResult = await SaveDataAsync(ct);
+        
+        if (!saveResult)
         {
-            CoinId = createdCoinId,
-            UnixTimestamp = _dateTimeService.UtcNowOffset.ToUnixTimeMilliseconds(),
-            SrcUserId = null,
-            DstUserId = coin.UserId
-        };
-
-        await Context.Moves.AddAsync(move, ct);
-
-        var saveResult = await SaveDataAsync(ct);
-
-        if (saveResult)
-        {
-            return createdCoinId;
+            return false;
         }
 
-        await RemoveAsync(createdCoinId, ct);
-        return default;
+        var moves = new List<Move>();
+        for (var i = 0; i < amount; i++)
+        {
+            var move = new Move
+            {
+                CoinId = coins[i].Id,
+                UnixTimestamp = _dateTimeService.UtcNowOffset.ToUnixTimeMilliseconds(),
+                SrcUserId = null,
+                DstUserId = coins[i].UserId
+            };
+            
+            moves.Add(move);
+        }
+
+        await Context.Moves.AddRangeAsync(moves, ct);
+        saveResult = await SaveDataAsync(ct);
+
+        if (!saveResult)
+        {
+            Context.Coins.RemoveRange(coins);
+            return false;
+        }
+
+        return true;
     }
 
     public async Task<List<TProjection>> GetUserCoinsAsync<TProjection>(
