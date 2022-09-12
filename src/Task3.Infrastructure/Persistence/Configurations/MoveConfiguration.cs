@@ -15,14 +15,14 @@ public class MoveConfiguration : IEntityTypeConfiguration<Move>
         builder.HasIndex(m => m.CoinId);
 
         // Один ко многим к User (SrcUserId)
-        builder.HasOne<User>()
+        builder.HasOne(m => m.SrcUser)
             .WithMany()
             .HasForeignKey(m => m.SrcUserId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Один ко многим к User (DstUserId)
-        builder.HasOne<User>()
+        builder.HasOne(m => m.DstUser)
             .WithMany()
             .HasForeignKey(m => m.DstUserId)
             .IsRequired(true)
